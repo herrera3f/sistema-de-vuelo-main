@@ -6,15 +6,8 @@ import pika
 import json
 from django.conf import settings
 
-<<<<<<< HEAD
 
 def send_api_request(request):
-=======
-class EmailAuthenticationForm(AuthenticationForm):
-    username = forms.EmailField(widget=forms.TextInput(attrs={'autofocus': True}), label="Email")
-
-def iniciar_sesion(request):
->>>>>>> 88140abe1f70a62e248b6d7cd3618bf008f70c69
     if request.method == 'POST':
         form = EmailAuthenticationForm(request, request.POST)
         if form.is_valid():
