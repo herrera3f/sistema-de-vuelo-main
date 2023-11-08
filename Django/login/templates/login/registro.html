@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Usuario</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/estilo.css' %}">
+</head>
+<body>
+    <div class="formulario">
+        <h1>Creación de cuenta</h1>
+        <form method="post" action="{% url 'registrar_usuario' %}">
+            {% csrf_token %}
+            <div class="username">
+                <input type="text" name="rut" required>
+                <label>Rut</label>
+            </div>
+            <div class="username">
+                <input type="text" name="nombre" required>
+                <label>Nombre de Usuario</label>
+            </div>
+            <div class="username">
+                <input type="email" name="correo" required>
+                <label>Correo</label>
+            </div>
+            <div class="username">
+                <input type="password" name="clave" required>
+                <label>Contraseña</label>
+            </div>
+            <input type="submit" value="Registrar">
+        </form>
+    </div>
+</body>
+</html>
