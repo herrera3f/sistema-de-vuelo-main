@@ -30,7 +30,7 @@ const escrituraUserSchema = new mongoose.Schema({
     correo: String,
     clave: String
 });
-const collectionName = 'nombreDeTuColeccion'; 
+const collectionName = 'sistema_reserva'; 
 const EscrituraUser = mongoose.model('EscrituraUser', escrituraUserSchema, collectionName);
 
 async function recibirYProcesarComandosDeEscritura() {
