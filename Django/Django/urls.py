@@ -20,7 +20,7 @@ from login import views, views2
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('registro/', views.registrar_usuario, name='registrar_usuario'),
+    path('registro/', views.login, name='registrar_usuario'),
     path('', views2.iniciar_sesion, name='iniciar_sesion'),
 ]
 
