@@ -1,24 +1,66 @@
+from django import forms
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import login
+from django.shortcuts import render, redirect
 import pika
-from django.http import JsonResponse
+import json
+from django.conf import settings
 
+<<<<<<< HEAD
 
 def send_api_request(request):
+=======
+class EmailAuthenticationForm(AuthenticationForm):
+    username = forms.EmailField(widget=forms.TextInput(attrs={'autofocus': True}), label="Email")
+
+def iniciar_sesion(request):
+>>>>>>> 88140abe1f70a62e248b6d7cd3618bf008f70c69
     if request.method == 'POST':
-        data = {
-            'username': request.POST['username'],
-            'password': request.POST['password'],
-            # Otras datos necesarios para la solicitud a la API en Node.js
-        }
-        message = json.dumps(data)
+        form = EmailAuthenticationForm(request, request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
 
-        # Publica el mensaje en la cola de RabbitMQ
-        channel.basic_publish(exchange='',
-                              routing_key='api_request_queue',
-                              body=message)
-        return JsonResponse({'message': 'Solicitud enviada a la API en Node.js'})
+            # Datos del usuario autenticado
+            username = user.username
 
-# Define la ruta en Django
-urlpatterns = [
-    path('send_api_request/', send_api_request, name='send_api_request'),
-    # Otras rutas
-]
+            # Conexión a RabbitMQ
+            connection = pika.BlockingConnection(pika.ConnectionParameters(
+                host=settings.RABBITMQ_HOST,
+                port=settings.RABBITMQ_PORT,
+                credentials=pika.PlainCredentials(
+                    settings.RABBITMQ_USERNAME,
+                    settings.RABBITMQ_PASSWORD,
+                ),
+            ))
+            channel = connection.channel()
+
+            # Define un intercambio y envía un mensaje
+            exchange_name = 'autenticacion_exchange'
+            channel.exchange_declare(exchange=exchange_name, exchange_type='direct')
+
+            comando_autenticacion = {
+                'usuario': username,
+                'evento': 'inicio_sesion',
+                # Otros datos relacionados con el inicio de sesión que desees enviar
+            }
+
+            channel.basic_publish(
+                exchange=exchange_name,
+                routing_key='autenticacion',
+                body=json.dumps(comando_autenticacion),
+            )
+
+            connection.close()
+
+            # Redirigir al usuario a la página deseada después del inicio de sesión
+            return redirect('pagina_de_inicio')  # Reemplaza 'pagina_de_inicio' con la URL deseada
+    else:
+        form = EmailAuthenticationForm()
+
+    return render(request, 'login/iniciar_sesion.html', {'form': form})
+
+
+
+
+
