@@ -88,3 +88,4 @@ app.get('/usuarios', async (req, res) => {
 app.listen(3001, () => {
     console.log('Servidor en ejecución en el puerto 3001');
 });
+

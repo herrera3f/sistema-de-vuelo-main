@@ -1,6 +1,7 @@
 import pika
 from django.http import JsonResponse
 
+
 def send_api_request(request):
     if request.method == 'POST':
         data = {

@@ -14,6 +14,10 @@
         <form method="post" action="{% url 'registrar_usuario' %}">
             {% csrf_token %}
             <div class="username">
+                <input type="text" name="rut" required>
+                <label>rut</label>
+            </div>
+            <div class="username">
                 <input type="text" name="nombre" required>
                 <label>Nombre de Usuario</label>
             </div>

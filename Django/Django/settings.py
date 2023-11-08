@@ -89,7 +89,7 @@ DATABASES = {
 
 MONGODB_DATABASES = {
     'default': {
-        'NAME': 'sistema_reserva',  # Nombre de tu base de datos MongoDB
+        'NAME': 'User',  # Nombre de tu base de datos MongoDB
         'HOST': 'mongodb+srv://benjaminmartinez29:Martinez890@User.bhz2ags.mongodb.net/User?retryWrites=true&w=majority',  # URI de conexión a MongoDB
     }
 }
@@ -99,8 +99,8 @@ MONGODB_DATABASES = {
 RABBITMQ_HOST = 'localhost'  # Reemplaza con la dirección de tu servidor RabbitMQ si es diferente
 
 RABBITMQ_USERNAME = 'guest'
-RABBITMQ_PASSWORD = 'guesy'
-RABBITMQ_PORT = 15672  # El puerto predeterminado de RabbitMQ
+RABBITMQ_PASSWORD = 'guest'
+RABBITMQ_PORT = 5672  # El puerto predeterminado de RabbitMQ
 
 
 # Password validation

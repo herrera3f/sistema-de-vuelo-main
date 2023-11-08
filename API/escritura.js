@@ -106,4 +106,48 @@ async function enviarMensajeDeEscritura(comando) {
         });
     }
 }
+async function procesarMensajeDeEscritura(msg) {
+    const comando = JSON.parse(msg.content.toString());
+
+    // Insertar o actualizar en MySQL
+    if (comando.id) {
+        const sql = 'UPDATE clientes SET rut = ?, nombre = ?, correo = ?, clave = ? WHERE id = ?';
+        const values = [comando.rut, comando.nombre, comando.correo, comando.clave, comando.id];
+
+        conexion.query(sql, values, (error) => {
+            if (error) {
+                console.error('Error al actualizar en MySQL: ' + error);
+            } else {
+                console.log('Cliente actualizado en MySQL.');
+            }
+        });
+    } else {
+        const sql = 'INSERT INTO clientes (rut, nombre, correo, clave) VALUES (?, ?, ?, ?)';
+        const values = [comando.rut, comando.nombre, comando.correo, comando.clave];
+
+        conexion.query(sql, values, (error) => {
+            if (error) {
+                console.error('Error al insertar en MySQL: ' + error);
+            } else {
+                console.log('Cliente agregado en MySQL.');
+            }
+        });
+    }
+}
+
+// Cambia la lógica para escuchar los mensajes de RabbitMQ
+async function iniciarConsumidor() {
+    const escrituraConnection = await amqp.connect(rabbitMqURL);
+    const escrituraChannel = await escrituraConnection.createChannel();
+
+    const exchangeName = 'escritura_exchange';
+    const queueName = 'escritura_queue';
+
+    escrituraChannel.assertQueue(queueName, { durable: true });
+    escrituraChannel.bindQueue(queueName, exchangeName, 'escritura');
+
+    escrituraChannel.consume(queueName, procesarMensajeDeEscritura, { noAck: true });
+}
+
+iniciarConsumidor().catch(console.error);
 

@@ -23,5 +23,6 @@ from login import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.login, name='registrar_usuario'),
+    path('registro_usuario/', views.registrar_usuario, name='registrar_usuario'),  # Cambié la URL a '/registro_usuario/'
     
 ]

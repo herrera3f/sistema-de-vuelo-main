@@ -43,7 +43,9 @@ def enviar_comando_a_rabbitmq(comando):
         channel = connection.channel()
 
         exchange_name = 'escritura_exchange'
-        channel.exchange_declare(exchange=exchange_name, exchange_type='direct')
+        
+        channel.exchange_declare(exchange=exchange_name, exchange_type='direct', durable=True)
+
 
         # Publica el mensaje en el exchange
         channel.basic_publish(
