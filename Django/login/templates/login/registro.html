@@ -11,7 +11,7 @@
 <body>
     <div class="formulario">
         <h1>Creación de cuenta</h1>
-        <form method="post" action="{% url 'registrar_usuario' %}">
+        <form method="post" action="{% url 'registrar_usuario' %}"">
             {% csrf_token %}
             <div class="username">
                 <input type="text" name="rut" required>
