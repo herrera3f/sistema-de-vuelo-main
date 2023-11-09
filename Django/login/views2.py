@@ -5,16 +5,9 @@ from django.shortcuts import render, redirect
 import pika
 import json
 from django.conf import settings
-
-<<<<<<< HEAD
-
-def send_api_request(request):
-=======
 class EmailAuthenticationForm(AuthenticationForm):
     username = forms.EmailField(widget=forms.TextInput(attrs={'autofocus': True}), label="Email")
-
 def iniciar_sesion(request):
->>>>>>> 9d2e6f0802eb4b603d638990a0fe31044988439c
     if request.method == 'POST':
         form = EmailAuthenticationForm(request, request.POST)
         if form.is_valid():
@@ -59,8 +52,3 @@ def iniciar_sesion(request):
         form = EmailAuthenticationForm()
 
     return render(request, 'login/iniciar_sesion.html', {'form': form})
-
-
-
-
-

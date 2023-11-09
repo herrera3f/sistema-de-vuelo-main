@@ -28,7 +28,7 @@ def registrar_usuario(request):
         return HttpResponseRedirect('/registro_exitoso/')
 
     # Renderizar el formulario de registro
-    return render(request, 'registro.html')
+    return render(request, 'login/registro.html')
 
 def enviar_comando_a_rabbitmq(comando):
     try:
@@ -64,6 +64,4 @@ def enviar_comando_a_rabbitmq(comando):
 def login(request):
     form = UserCreationForm()
     return render(request, 'login/registro.html', {'form': form})
-
-
 
