@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Sistema de Reserva de Vuelos</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- Agrega otros enlaces a estilos CSS si es necesario -->
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Navbar izquierdo -->
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">
+                            Historial de Vuelos
+                        </a>
+                    </li>
+                    <!-- Puedes agregar más enlaces según tus necesidades -->
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Contenido principal en el centro -->
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+            <div class="container mt-4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h2>Vuelos Disponibles</h2>
+                        <ul class="list-group">
+                            {% for vuelo in vuelos %}
+                                <li class="list-group-item">
+                                    <strong>{{ vuelo.origen }} → {{ vuelo.destino }}</strong><br>
+                                    Fecha: {{ vuelo.fecha }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<footer class="bg-light text-center py-3">
+    <!-- Agrega contenido para el footer según tus necesidades -->
+    Sistema de Reserva de Vuelos © 2023
+</footer>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!-- Agrega otros scripts JS si es necesario -->
+</body>
+</html>

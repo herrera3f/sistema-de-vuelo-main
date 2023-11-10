@@ -11,7 +11,11 @@
 <body>
     <div class="formulario">
         <h1>Inicio de sesión</h1>
-        <form method="post">
+        <form method="post" autocomplete="off">
+            {% csrf_token %}
+            {% if login_error %}
+                <p style="color: red;">Error en la autenticación. Verifica tus datos.</p>
+            {% endif %}
             <div class="username">
                 <input type="text" name="email" required>
                 <label>Correo electrónico</label>
@@ -29,3 +33,6 @@
     </div>
 </body>
 </html>
+
+
+

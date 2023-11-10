@@ -1,4 +1,6 @@
-from django.shortcuts import render
+# views.py en tu aplicación Django
+
+from django.shortcuts import render, redirect
 from django.http import HttpResponseRedirect
 import pika
 import json
@@ -15,6 +17,7 @@ def registrar_usuario(request):
 
         # Crear el comando de registro
         comando_registro = {
+            'operacion':'agregar_usuario',
             'rut': rut,
             'nombre': nombre,
             'correo': correo,
@@ -24,8 +27,8 @@ def registrar_usuario(request):
         # Enviar el comando a RabbitMQ
         enviar_comando_a_rabbitmq(comando_registro)
 
-        # Redireccionar a una página de confirmación o hacer cualquier otra acción necesaria
-        return HttpResponseRedirect('/registro_exitoso/')
+        # Redireccionar a la página de inicio de sesión
+        return redirect('iniciar_sesion')
 
     # Renderizar el formulario de registro
     return render(request, 'login/registro.html')
@@ -46,7 +49,6 @@ def enviar_comando_a_rabbitmq(comando):
         
         channel.exchange_declare(exchange=exchange_name, exchange_type='direct', durable=True)
 
-
         # Publica el mensaje en el exchange
         channel.basic_publish(
             exchange=exchange_name,
@@ -57,11 +59,6 @@ def enviar_comando_a_rabbitmq(comando):
         connection.close()
     except Exception as e:
         print(f'Error al enviar el comando a RabbitMQ: {e}')
-        
-        
-        
-        
-def login(request):
-    form = UserCreationForm()
-    return render(request, 'login/registro.html', {'form': form})
+
+
 

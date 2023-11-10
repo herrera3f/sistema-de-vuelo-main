@@ -1,141 +1,52 @@
-const express = require('express');
-const mysql = require('mysql');
-const bodyParser = require('body-parser');
 const amqp = require('amqplib');
+const mysql = require('mysql');
 
-const app = express();
-app.use(bodyParser.json());
-
-const PUERTO = 3000;
-
-const conexion = mysql.createConnection({
+const rabbitMqURL = 'amqp://localhost';
+const mysqlConfig = {
     host: 'db4free.net',
-    database: 'bd_brandon',
     user: 'herrera3f',
     password: 'Bsmh.7700',
-});
+    database: 'bd_brandon',
+};
 
-// Conexión a RabbitMQ
-const rabbitMqURL = 'amqp://localhost';
+async function agregarClienteEnMySQL(cliente) {
+    const connection = mysql.createConnection(mysqlConfig);
 
-app.listen(PUERTO, () => {
-    console.log(`Servidor compilado desde el puerto ${PUERTO}`);
-});
+    connection.connect((error) => {
+        if (error) {
+            console.error('Error de conexión a MySQL:', error);
+            return;
+        }
 
-conexion.connect((error) => {
-    if (error) throw error;
-    console.log('Conexión exitosa a MySQL');
-});
-
-app.get('/', (req, res) => {
-    res.send('Nuestra API está casi funcionando');
-});
-
-app.post('/cliente/agregar', (req, res) => {
-    const cliente = {
-        rut: req.body.rut,
-        nombre: req.body.nombre,
-        correo: req.body.correo,
-        clave: req.body.clave,
-    };
-
-    // Publica el comando en RabbitMQ
-    enviarMensajeDeEscritura(cliente);
-
-    res.json('Cliente agregado correctamente');
-});
-
-app.put('/cliente/actualizar/:id', (req, res) => {
-    const { id } = req.params;
-    const cliente = {
-        rut: req.body.rut,
-        nombre: req.body.nombre,
-        correo: req.body.correo,
-        clave: req.body.clave,
-    };
-
-    // Publica el comando de actualización en RabbitMQ
-    enviarMensajeDeEscritura({ id, ...cliente });
-
-    res.json('Cliente actualizado correctamente');
-});
-
-app.delete('/cliente/eliminar/:id', (req, res) => {
-    const { id } = req.params;
-
-    // Publica el comando de eliminación en RabbitMQ
-    enviarMensajeDeEscritura({ id });
-
-    res.json('Cliente eliminado correctamente');
-});
-
-// Función para enviar comandos a RabbitMQ
-async function enviarMensajeDeEscritura(comando) {
-    const escrituraConnection = await amqp.connect(rabbitMqURL);
-    const escrituraChannel = await escrituraConnection.createChannel();
-
-    const exchangeName = 'escritura_exchange';
-
-    escrituraChannel.assertExchange(exchangeName, 'direct', { durable: true });
-
-    // Publica el mensaje en el exchange
-    escrituraChannel.publish(exchangeName, 'escritura', Buffer.from(JSON.stringify(comando)));
-
-    // Insertar o actualizar en MySQL
-    if (comando.id) {
-        const sql = 'UPDATE clientes SET rut = ?, nombre = ?, correo = ?, clave = ? WHERE id = ?';
-        const values = [comando.rut, comando.nombre, comando.correo, comando.clave, comando.id];
-
-        conexion.query(sql, values, (error) => {
-            if (error) {
-                console.error('Error al actualizar en MySQL: ' + error);
-            } else {
-                console.log('Cliente actualizado en MySQL.');
-            }
-        });
-    } else {
         const sql = 'INSERT INTO clientes (rut, nombre, correo, clave) VALUES (?, ?, ?, ?)';
-        const values = [comando.rut, comando.nombre, comando.correo, comando.clave];
+        const values = [cliente.rut, cliente.nombre, cliente.correo, cliente.clave];
 
-        conexion.query(sql, values, (error) => {
+        connection.query(sql, values, (error, results, fields) => {
             if (error) {
-                console.error('Error al insertar en MySQL: ' + error);
+                console.error('Error al insertar en MySQL:', error);
             } else {
-                console.log('Cliente agregado en MySQL.');
+                console.log(`Cliente agregado en MySQL. ID: ${results.insertId}`);
             }
+
+            connection.end();
         });
-    }
+    });
 }
+
 async function procesarMensajeDeEscritura(msg) {
     const comando = JSON.parse(msg.content.toString());
 
-    // Insertar o actualizar en MySQL
-    if (comando.id) {
-        const sql = 'UPDATE clientes SET rut = ?, nombre = ?, correo = ?, clave = ? WHERE id = ?';
-        const values = [comando.rut, comando.nombre, comando.correo, comando.clave, comando.id];
-
-        conexion.query(sql, values, (error) => {
-            if (error) {
-                console.error('Error al actualizar en MySQL: ' + error);
-            } else {
-                console.log('Cliente actualizado en MySQL.');
-            }
-        });
-    } else {
-        const sql = 'INSERT INTO clientes (rut, nombre, correo, clave) VALUES (?, ?, ?, ?)';
-        const values = [comando.rut, comando.nombre, comando.correo, comando.clave];
-
-        conexion.query(sql, values, (error) => {
-            if (error) {
-                console.error('Error al insertar en MySQL: ' + error);
-            } else {
-                console.log('Cliente agregado en MySQL.');
-            }
-        });
+try {
+    if (comando.operacion === 'agregar_usuario') {
+        // Operación específica para agregar a MySQL
+        await agregarClienteEnMySQL(comando);
+        console.log('Cliente agregado en MySQL.');
     }
+} catch (error) {
+    console.error('Error al procesar comando en MySQL:', error);
+}
 }
 
-// Cambia la lógica para escuchar los mensajes de RabbitMQ
 async function iniciarConsumidor() {
     const escrituraConnection = await amqp.connect(rabbitMqURL);
     const escrituraChannel = await escrituraConnection.createChannel();
@@ -143,11 +54,17 @@ async function iniciarConsumidor() {
     const exchangeName = 'escritura_exchange';
     const queueName = 'escritura_queue';
 
+    escrituraChannel.assertExchange(exchangeName, 'direct', { durable: true });
     escrituraChannel.assertQueue(queueName, { durable: true });
     escrituraChannel.bindQueue(queueName, exchangeName, 'escritura');
+
+    escrituraChannel.prefetch(1);
+
+    console.log('Consumidor de escritura iniciado. Esperando mensajes...');
 
     escrituraChannel.consume(queueName, procesarMensajeDeEscritura, { noAck: true });
 }
 
 iniciarConsumidor().catch(console.error);
+
 
