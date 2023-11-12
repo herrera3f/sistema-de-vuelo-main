@@ -37,38 +37,13 @@ const escrituraUserSchema = new mongoose.Schema({
 const collectionName = 'sistema_reserva';
 const EscrituraUser = mongoose.model('EscrituraUser', escrituraUserSchema, collectionName);
 
-async function recibirYProcesarComandosDeEscritura() {
-    const lecturaConnection = await amqp.connect('amqp://localhost');
-    const lecturaChannel = await lecturaConnection.createChannel();
 
-    const exchangeName = 'escritura_exchange';
-    const queueName = 'escritura_queue';
-
-    lecturaChannel.assertQueue(queueName, { durable: true });
-    lecturaChannel.bindQueue(queueName, exchangeName, 'escritura');
-
-    lecturaChannel.consume(queueName, async (msg) => {
-        const comando = JSON.parse(msg.content.toString());
-
-try {
-    if (comando.operacion === 'agregar_usuario') {
-        // Operación específica para agregar a MongoDB
-        await User.create(comando);
-        console.log('Cliente agregado en MongoDB.');
-    }
-} catch (error) {
-    console.error('Error al procesar comando en MongoDB:', error);
-}
-
-    }, { noAck: true });
-}
-
-recibirYProcesarComandosDeEscritura().catch(console.error);
 
 app.post('/autenticar-usuario', async (req, res) => {
     const { correo, clave } = req.body;
 
     try {
+        // Utiliza el modelo User para acceder a la colección
         const user = await User.findOne({ correo, clave });
 
         if (user) {
@@ -82,23 +57,8 @@ app.post('/autenticar-usuario', async (req, res) => {
     }
 });
 
-app.get('/usuarios', async (req, res) => {
-    try {
-        const users = await User.find().select('-__v');
 
-        if (users.length > 0) {
-            res.json({ listaClientes: users });
-        } else {
-            res.json("No hay registros.");
-        }
-    } catch (error) {
-        console.error('Error al buscar usuarios:', error);
-        res.status(500).send('Error al buscar usuarios');
-    }
-});
 
 app.listen(3001, () => {
     console.log('Servidor en ejecución en el puerto 3001');
 });
-
-

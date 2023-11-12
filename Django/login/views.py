@@ -1,36 +1,41 @@
-# views.py en tu aplicación Django
-
-from django.shortcuts import render, redirect
-from django.http import HttpResponseRedirect
 import pika
 import json
 from django.conf import settings
+from django.http import HttpResponseRedirect
+from django.shortcuts import render, redirect
 from django.contrib.auth.forms import UserCreationForm
+from django.http import JsonResponse
+from .models import User
 
 def registrar_usuario(request):
     if request.method == 'POST':
-        # Procesar el formulario de registro y obtener los datos del usuario
         rut = request.POST['rut']
         nombre = request.POST['nombre']
         correo = request.POST['correo']
         clave = request.POST['clave']
 
-        # Crear el comando de registro
         comando_registro = {
-            'operacion':'agregar_usuario',
             'rut': rut,
             'nombre': nombre,
             'correo': correo,
             'clave': clave,
+            'operacion': 'mysql',  # o 'mongodb'
+        }
+        comando_registro1 = {
+            'rut': rut,
+            'nombre': nombre,
+            'correo': correo,
+            'clave': clave,
+            'operacion': 'mongodb',  # o 'mongodb'
         }
 
         # Enviar el comando a RabbitMQ
         enviar_comando_a_rabbitmq(comando_registro)
+        enviar_comando_a_rabbitmq(comando_registro1)
 
-        # Redireccionar a la página de inicio de sesión
-        return redirect('iniciar_sesion')
+        # Redirige a la página de inicio de sesión después de un registro exitoso
+        return redirect('iniciar_sesion')  # Cambia '/login/' por la URL real de inicio de sesión
 
-    # Renderizar el formulario de registro
     return render(request, 'login/registro.html')
 
 def enviar_comando_a_rabbitmq(comando):
@@ -46,10 +51,10 @@ def enviar_comando_a_rabbitmq(comando):
         channel = connection.channel()
 
         exchange_name = 'escritura_exchange'
-        
+
         channel.exchange_declare(exchange=exchange_name, exchange_type='direct', durable=True)
 
-        # Publica el mensaje en el exchange
+        # Publica el mensaje en la cola
         channel.basic_publish(
             exchange=exchange_name,
             routing_key='escritura',
@@ -59,6 +64,13 @@ def enviar_comando_a_rabbitmq(comando):
         connection.close()
     except Exception as e:
         print(f'Error al enviar el comando a RabbitMQ: {e}')
+
+def listar_usuarios(request):
+    request.method == 'GET'
+    users = User.objects.all()
+    lista_usuarios = [{'rut': user.rut, 'nombre': user.nombre, 'correo': user.correo} for user in users]
+    return JsonResponse({'lista_usuarios': lista_usuarios})
+
 
 
 
