@@ -1,11 +1,13 @@
 from django.db import models
 
 # Create your models here.
-from django.db import models
 
-class MiModelo(models.Model):
-    campo1 = models.CharField(max_length=50)
-    campo2 = models.IntegerField()
+class User(models.Model):
+    # Definir campos y métodos del modelo aquí
+    rut = models.CharField(max_length=10)
+    nombre = models.CharField(max_length=255)
+    correo = models.EmailField()
+    clave = models.CharField(max_length=255)
 
-    class Meta:
-        db_table = 'clientes'
+    def __str__(self):
+        return self.nombre
