@@ -1,54 +1,48 @@
-from django import forms
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import login
-from django.shortcuts import render, redirect
-import pika
 import json
-from django.conf import settings
-class EmailAuthenticationForm(AuthenticationForm):
-    username = forms.EmailField(widget=forms.TextInput(attrs={'autofocus': True}), label="Email")
+import logging
+from django.shortcuts import render, redirect
+from urllib import request as urllib_request, parse
+
 def iniciar_sesion(request):
     if request.method == 'POST':
-        form = EmailAuthenticationForm(request, request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
+        email = request.POST['email']
+        password = request.POST['contraseña']
 
-            # Datos del usuario autenticado
-            username = user.username
+        # Enviar credenciales al servidor de Node.js para la autenticación
+        nodejs_api_url = 'http://localhost:3001/autenticar-usuario'  # Reemplaza con la URL correcta
+        data = {'email': email, 'contraseña': password}
 
-            # Conexión a RabbitMQ
-            connection = pika.BlockingConnection(pika.ConnectionParameters(
-                host=settings.RABBITMQ_HOST,
-                port=settings.RABBITMQ_PORT,
-                credentials=pika.PlainCredentials(
-                    settings.RABBITMQ_USERNAME,
-                    settings.RABBITMQ_PASSWORD,
-                ),
-            ))
-            channel = connection.channel()
+        # Codificar los datos en formato JSON
+        data = json.dumps(data).encode('utf-8')
 
-            # Define un intercambio y envía un mensaje
-            exchange_name = 'autenticacion_exchange'
-            channel.exchange_declare(exchange=exchange_name, exchange_type='direct')
+        # Realizar la solicitud POST con urllib
+        req = urllib_request.Request(nodejs_api_url, data=data, headers={'Content-Type': 'application/json'})
 
-            comando_autenticacion = {
-                'usuario': username,
-                'evento': 'inicio_sesion',
-                # Otros datos relacionados con el inicio de sesión que desees enviar
-            }
+        try:
+            response = urllib_request.urlopen(req)
+            response_data = json.loads(response.read().decode('utf-8'))
 
-            channel.basic_publish(
-                exchange=exchange_name,
-                routing_key='autenticacion',
-                body=json.dumps(comando_autenticacion),
-            )
+            if response_data.get('usuario'):
+                # Autenticación exitosa
 
-            connection.close()
+                # Aquí deberías almacenar el "Rut" en la sesión
+                request.session['usuario_rut'] = response_data['usuario']['rut']
+                print(f'Rut almacenado en la sesión: {response_data["usuario"]["rut"]}')
+                logging.info(f'Rut almacenado en la sesión: {response_data["usuario"]["rut"]}')
 
-            # Redirigir al usuario a la página deseada después del inicio de sesión
-            return redirect('pagina_de_inicio')  # Reemplaza 'pagina_de_inicio' con la URL deseada
+                username = response_data['usuario']['nombre']
+                logging.info(f'Sesión iniciada para el usuario: {username}')
+
+                # Redirigir al usuario a la página deseada después del inicio de sesión
+                return render(request,'Home/Home_usuario.html')  # Reemplaza 'pagina_de_inicio' con la URL deseada
+            else:
+                # Manejar el caso de autenticación fallida desde la API de Node.js
+                logging.error('Error en la autenticación desde la API de Node.js')
+                return render(request, 'login/iniciar_sesion.html', {'login_error': True})
+        except Exception as e:
+            # Manejar otras excepciones, como problemas de conexión
+            logging.error(f'Error en la solicitud a la API de Node.js: {str(e)}')
+            return render(request, 'login/iniciar_sesion.html', {'login_error': True})
     else:
-        form = EmailAuthenticationForm()
-
-    return render(request, 'login/iniciar_sesion.html', {'form': form})
+        # Renderizar el formulario de inicio de sesión
+        return render(request, 'login/iniciar_sesion.html')

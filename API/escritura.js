@@ -4,7 +4,6 @@ const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const amqp = require('amqplib');
 const mongoose = require('mongoose');
-const mongoURI = 'mongodb+srv://benjaminmartinez29:Martinez890@User.bhz2ags.mongodb.net/User?retryWrites=true&w=majority';
 // Configuración de RabbitMQ
 const rabbitMqURL = 'amqp://localhost';
 const exchangeName = 'escritura_exchange'; // Usar el exchange principal
@@ -66,6 +65,12 @@ async function recibirYProcesarComandos() {
                         await realizarOperacionMySQL(comando);
                         break;
                     case 'mongodb':
+                        await realizarOperacionMongoDB(comando);
+                        break;
+                    case'mysql_reserva':
+                        await realizarOperacionMySQL(comando);
+                        break;
+                    case 'mongodb_reserva':
                         await realizarOperacionMongoDB(comando);
                         break;
                     default:
@@ -135,6 +140,7 @@ async function enviarMensajeDeEscrituraMongo(comando) {
 
     channel.publish(exchangeName, 'escritura', Buffer.from(JSON.stringify(comando)));
 }
+
 async function realizarOperacionMySQL(comando) {
     console.log('Comando recibido:', comando);
     const conexionMySQL = mysql.createConnection({
@@ -155,8 +161,41 @@ async function realizarOperacionMySQL(comando) {
             });
         });
 
-        if (comando.operacion === 'mysql') {
-            // Verifica si el cliente ya existe en la base de datos
+        if (comando.operacion === 'mysql_reserva') {
+            
+            // Verifica si la reserva ya existe en la base de datos
+            const reservaExistente = await new Promise((resolve, reject) => {
+                const sql = 'SELECT * FROM reserva WHERE `ID_Reserva` = ?';// Ajusta esto según tu modelo de datos
+                conexionMySQL.query(sql, [comando.campo_uniqueness], (error, results) => {
+                    if (error) {
+                        reject(error);
+                    } else {
+                        resolve(results.length > 0 ? results[0] : null);
+                    }
+                });
+            });
+
+            if (!reservaExistente) {
+                // La reserva no existe, realiza una inserción
+                const sql = 'INSERT INTO reserva (`ID_Vuelos`, `Nombre_Apellido`, Pais, `Numero_de_Documento`, `Fecha_de_Nacimiento`, Sexo, Email, Telefono) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+                const values = [comando['ID_Vuelos'], comando['Nombre_Apellido'], comando.Pais, comando['Numero_de_Documento'], comando['Fecha_de_Nacimiento'], comando.Sexo, comando.Email, comando.Telefono];
+
+
+                
+
+                await new Promise((resolve, reject) => {
+                    conexionMySQL.query(sql, values, (error) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            console.log('Reserva agregada en MySQL.');
+                            resolve();
+                        }
+                    });
+                });
+            }
+        } else if (comando.operacion === 'mysql') {
+            // Manejar la operación de registro de usuarios
             const clienteExistente = await new Promise((resolve, reject) => {
                 const sql = 'SELECT * FROM clientes WHERE rut = ?';
                 conexionMySQL.query(sql, [comando.rut], (error, results) => {
@@ -168,25 +207,10 @@ async function realizarOperacionMySQL(comando) {
                 });
             });
 
-            if (clienteExistente) {
-                // El cliente existe, realiza una actualización
-                const sql = 'UPDATE clientes SET nombre = ?, correo = ?, clave = ? WHERE rut = ?';
-                const values = [comando.nombre, comando.correo, comando.clave, comando.rut];
-
-                await new Promise((resolve, reject) => {
-                    conexionMySQL.query(sql, values, (error) => {
-                        if (error) {
-                            reject(error);
-                        } else {
-                            console.log('Cliente actualizado en MySQL.');
-                            resolve();
-                        }
-                    });
-                });
-            } else {
+            if (!clienteExistente) {
                 // El cliente no existe, realiza una inserción
-                const sql = 'INSERT INTO clientes (rut, nombre, correo, clave) VALUES (?, ?, ?, ?)';
-                const values = [comando.rut, comando.nombre, comando.correo, comando.clave];
+                const sql = 'INSERT INTO clientes (rut, nombre, email, contraseña) VALUES (?, ?, ?, ?)';
+                const values = [comando.rut, comando.nombre, comando.email, comando.contraseña];
 
                 await new Promise((resolve, reject) => {
                     conexionMySQL.query(sql, values, (error) => {
@@ -199,9 +223,6 @@ async function realizarOperacionMySQL(comando) {
                     });
                 });
             }
-
-            comando.operacion = 'mysql';
-            publicarMensajeDeEscrituraMySQL({ ...comando, operacion: 'mysql' });
         } else {
             console.error('Operación no válida:', comando.operacion);
         }
@@ -211,36 +232,75 @@ async function realizarOperacionMySQL(comando) {
         conexionMySQL.end();
     }
 }
+
+
+
+
+
+
+
+
+
+
 // Función para realizar operaciones en MongoDB
 async function realizarOperacionMongoDB(comando) {
-    if (comando && comando.operacion === 'mongodb') {
-        const mongoURI = 'mongodb+srv://benjaminmartinez29:Martinez890@User.bhz2ags.mongodb.net/User?retryWrites=true&w=majority';
+    console.log('Comando recibido:', comando);
+    if (comando) {
+        const mongoURI = 'mongodb+srv://benjaminmartinez29:Martinez890@User.bhz2ags.mongodb.net/sistema_reserva?retryWrites=true&w=majority';
 
         try {
             const conexionMongoDB = mongoose.createConnection(mongoURI, {
                 useNewUrlParser: true,
                 useUnifiedTopology: true,
             });
+            console.log('Conexión a MongoDB establecida con éxito.');
 
-            const usuarioSchema = new mongoose.Schema({
-                rut: String,
-                nombre: String,
-                correo: String,
-                clave: String,
-            });
+            if (comando.operacion === 'mongodb') {
+                const usuarioSchema = new mongoose.Schema({
+                    rut: String,
+                    nombre: String,
+                    email: String,
+                    contraseña: String,
+                      
+                });
 
-            const Usuario = conexionMongoDB.model('Usuario', usuarioSchema);
+                const Usuario = conexionMongoDB.model('usuarios', usuarioSchema);
 
-            if (comando.id) {
-                await Usuario.findByIdAndUpdate(comando.id, comando, { upsert: true });
-                console.log('Cliente actualizado en MongoDB.');
+                if (comando.id) {
+                    await Usuario.findByIdAndUpdate(comando.id, comando, { upsert: true });
+                    console.log('Usuario actualizado en MongoDB.');
+                } else {
+                    await Usuario.create(comando);
+                    console.log('Usuario agregado en MongoDB.');
+                }
+            } else if (comando.operacion === 'mongodb_reserva') {
+                const ReservaSchema = new mongoose.Schema({
+                    ID_Vuelos: String,
+                    Nombre_Apellido: String,
+                    Pais: String,
+                    Numero_de_Documento: String,
+                    Fecha_de_Nacimiento: String,
+                    Sexo: String,
+                    Email: String,
+                    Telefono: String,
+                    
+                });
+
+                const Reserva = conexionMongoDB.model('Reserva', ReservaSchema);
+
+                if (comando.id) {
+                    await Reserva.findByIdAndUpdate(comando.id, comando, { upsert: true });
+                    console.log('Reserva actualizada en MongoDB.');
+                } else {
+                    await Reserva.create(comando);
+                    console.log('Reserva agregada en MongoDB.');
+                }
             } else {
-                await Usuario.create(comando);
-                console.log('Cliente agregado en MongoDB.');
+                console.error('Operación no válida:', comando.operacion);
             }
 
-            comando.operacion = 'mongodb';
-            publicarMensajeDeEscrituraMongo({ ...comando, operacion: 'mongodb' });
+            // Publicar el mensaje, independientemente de la operación
+            
         } catch (error) {
             console.error('Error al realizar operación en MongoDB:', error);
         } finally {
@@ -248,52 +308,3 @@ async function realizarOperacionMongoDB(comando) {
         }
     }
 }
-
-app.post('/cliente/agregar', async (req, res) => {
-    try {
-        const cliente = {
-            rut: req.body.rut,
-            nombre: req.body.nombre,
-            correo: req.body.correo,
-            clave: req.body.clave,
-        };
-
-        await enviarMensajeDeEscrituraMySQL({ ...cliente, operacion: 'mysql' });
-        await enviarMensajeDeEscrituraMongo({ ...cliente, operacion: 'mongodb' });
-
-        res.json('Cliente agregado correctamente');
-    } catch (error) {
-        console.error('Error al agregar cliente:', error);
-        res.status(500).json('Error interno del servidor');
-    }
-});
-app.put('/cliente/actualizar/:id', (req, res) => {
-    const { id } = req.params;
-    const cliente = {
-        rut: req.body.rut,
-        nombre: req.body.nombre,
-        correo: req.body.correo,
-        clave: req.body.clave,
-    };
-
-    // Publica el comando de actualización en RabbitMQ para MySQL
-    enviarMensajeDeEscrituraMySQL({ id, ...cliente });
-
-    // Publica el comando de actualización en RabbitMQ para MongoDB
-    enviarMensajeDeEscrituraMongo({ id, ...cliente });
-
-    res.json('Cliente actualizado correctamente');
-});
-
-app.delete('/cliente/eliminar/:id', (req, res) => {
-    const { id } = req.params;
-
-    // Publica el comando de eliminación en RabbitMQ para MySQL
-    enviarMensajeDeEscrituraMySQL({ id });
-
-    // Publica el comando de eliminación en RabbitMQ para MongoDB
-    enviarMensajeDeEscrituraMongo({ id });
-
-    res.json('Cliente eliminado correctamente');
-});
-// Función principal para recibir y procesar comandos

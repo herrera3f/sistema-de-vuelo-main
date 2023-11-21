@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Reserva</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+<body>
+    <div class="container-fluid bg-light" style="padding: 60px;">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="container py-2 bg-white rounded shadow">
+                    <h2 class="text-center">Formulario</h2>
+                    <form action="{% url 'reserva' %}" method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="ID_vuelo">ID vuelo:</label>
+                            <input type="text" class="form-control" id="ID_vuelo" name="ID_Vuelos" value="{{ request.GET.ID_vuelo }}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="nombre_apellido">Nombre y Apellido:</label>
+                            <input type="text" class="form-control" id="nombre_apellido" name="Nombre_Apellido" placeholder="Nombre y Apellido" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="pais">País:</label>
+                            <select class="form-control" id="pais" name="Pais">
+                                <option value="Argentina">Argentina</option>
+                                <option value="Brasil">Brasil</option>
+                                <option value="Chile">Chile</option>
+                                <!-- Agrega más opciones según tus necesidades -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="documento">Número de documento:</label>
+                            <input type="text" class="form-control" id="documento" name="Numero_de_Documento" required pattern="[0-9]+" title="Solo se permiten números">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="fecha_nacimiento">Fecha de nacimiento:</label>
+                            <input type="date" class="form-control" id="fecha_nacimiento" name="Fecha_de_Nacimiento" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="sexo">Sexo:</label>
+                            <select class="form-control" id="sexo" name="Sexo">
+                                <option value="Femenino">Femenino</option>
+                                <option value="Masculino">Masculino</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input type="email" class="form-control" id="email" name="Email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telefono">Teléfono:</label>
+                            <input type="tel" class="form-control" id="telefono" name="Telefono" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Pagar</button>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <!-- Agrega aquí tu contenido adicional a la derecha del formulario -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>

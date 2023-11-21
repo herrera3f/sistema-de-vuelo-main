@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'login'
+    'login',
+    'Reserva'
 ]
 
 MIDDLEWARE = [
@@ -57,7 +58,7 @@ ROOT_URLCONF = 'Django.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'Reserva','templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -76,6 +77,7 @@ WSGI_APPLICATION = 'Django.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -84,8 +86,17 @@ DATABASES = {
         'PASSWORD': 'Bsmh.7700',  # Reemplaza 'mysql_password' con la contraseña de MySQL
         'HOST': 'db4free.net',  # Reemplaza 'localhost' con la dirección de tu servidor MySQL
         'PORT': '3306',  # Reemplaza '3306' con el puerto de tu servidor MySQL
-    }
+    },
+    'django_sessions': {
+        'ENGINE': 'django.db.backends.mysql',  # Ajusta según tu motor de base de datos
+        'NAME': 'bd_brandon',
+        'USER': 'herrera3f',
+        'PASSWORD': 'Bsmh.7700',
+        'HOST': 'db4free.net',
+        'PORT': '3306',
+    },
 }
+
 
 MONGODB_DATABASES = {
     'default': {
@@ -141,3 +152,10 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Django/static')]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# Desactiva el uso de la base de datos para sesiones
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'  # Puedes cambiarlo a otro engine según tus necesidades
+SESSION_COOKIE_NAME = 'tu_nombre_de_cookie'  # Establece un nombre de cookie personalizado
+SESSION_COOKIE_AGE = 1209600  # Duración de la cookie en segundos (por ejemplo, 2 semanas)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_SECURE = False  # Establece en True en producción si usas HTTPS
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'  # Puedes cambiarlo a otro engine según tus necesidades
